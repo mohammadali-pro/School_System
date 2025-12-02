@@ -27,7 +27,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     </nav>
 
     <div class="dashboard-container">
-        <h2 class="welcome1">Welcome, <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin'); ?>!</h2>
+        <h2 class="welcome1">Welcome, <?php echo $_SESSION['full_name']; ?>!</h2>
         <div id="updateProfile" class="section" style="display:none;">
 <div class="update-container">
     <h2>Update Your Profile</h2>
@@ -64,36 +64,27 @@ document.querySelector('form').addEventListener('submit', function(e) {
 
         <div id="manageTeachers" class="section" style="display:none;">
             <h2>Manage Teachers</h2>
-            <!--Add your form here-->
         </div>
-
         <div id="manageStudents" class="section" style="display:none;">
-            <h2>Manage Students From second computer</h2>
-            <!-- Add your form here-->
+            <h2>Manage Students</h2>
         </div>
-
         <div id="assignCourses" class="section" style="display:none;">
             <h2>Assign Courses</h2>
-            <!-- Add your form here-->
         </div>
-
         <div id="viewGrades" class="section" style="display:none;">
             <h2>View Grades</h2>
-            <!--Add your table or content here-->
         </div>
     </div>
 
     <script>
         function showSection(id) {
-            // Hide all sections
+            // to hide the divs
             document.querySelectorAll('.section').forEach(sec => sec.style.display = 'none');
-            // Show the selected section
+            // to Show the specific div
             document.getElementById(id).style.display = 'block';
         }
 
-        function logout() {
-            window.location.href = 'index.php';
-        }
+
     </script>
 </body>
 
