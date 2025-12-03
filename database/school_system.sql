@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 19, 2025 at 12:33 AM
+-- Generation Time: Dec 03, 2025 at 01:33 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -84,6 +84,14 @@ CREATE TABLE `teachers` (
   `specialization` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `teachers`
+--
+
+INSERT INTO `teachers` (`user_id`, `department`, `specialization`) VALUES
+(6, 'cs', 'cs'),
+(7, 'cs', 'cs');
+
 -- --------------------------------------------------------
 
 --
@@ -96,15 +104,18 @@ CREATE TABLE `users` (
   `email` varchar(100) DEFAULT NULL,
   `password` varchar(100) DEFAULT NULL,
   `role` varchar(20) DEFAULT NULL,
-  `photo_path` varchar(255) DEFAULT NULL
+  `photo_path` varchar(255) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `role`, `photo_path`) VALUES
-(1, 'Admin', 'admin@gmail.com', '$2y$10$EpsmsKDY9zjnj8famQ7dnuUP/cKY2ZVeIdaBlUL.CcRm6b8D1w9eG', 'admin', NULL);
+INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `role`, `photo_path`, `phone`) VALUES
+(1, 'Mohammad Ali Maaz', 'maazm691@gmail.com', '$2y$10$eNL66D8UnZzRQ8HNvEzmlOIooJoQOTftHKeKNU2bZ6t8.yNHE32Ze', 'admin', 'profile_1_1764704045.jpg', '12345678'),
+(6, 'Mohammad Ali Maaz', 'mamever125@gmail.com', '$2y$10$1K5ebsm9MeTQgcov.sXBSePwdsI51Xpj7pRNrmxvwU0CIQP8uqNsW', 'teacher', NULL, '12345678'),
+(7, 'Mohammad Ali Maaz', 'mohammadalimaaz32@gmail.com', '$2y$10$.PDovaUyMQN8KVePVoPWBuRUF47vRLH.ybfjv1J6cy08GD9VG47qm', 'teacher', NULL, '12345678');
 
 --
 -- Indexes for dumped tables
@@ -177,7 +188,7 @@ ALTER TABLE `grades`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- Constraints for dumped tables

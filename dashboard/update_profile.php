@@ -65,7 +65,11 @@ $stmt->execute($params);
 // Update session name so dashboard updates instantly
 $_SESSION['full_name'] = $fullname;
 
-echo "<script>alert('Profile updated successfully!'); window.location.href='admin_dashboard.php';</script>";
+// Determine redirect based on user role
+$role = $_SESSION['role'] ?? 'admin';
+$redirectPage = $role . '_dashboard.php';
+
+header("Location: $redirectPage?success=profile_updated");
 exit;
 
 ?>
