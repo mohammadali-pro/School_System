@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Teacher - School Management System</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/style.css?v=<?php echo time(); ?>">
 </head>
 <body class="dashboard-body">
 
@@ -97,32 +97,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form method="POST">
                     <label>Department:</label>
-                    <select name="department" required>
-                        <option value="Math" <?= $teacher['department']=="Math"?"selected":"" ?>>Math</option>
-                        <option value="Science" <?= $teacher['department']=="Science"?"selected":"" ?>>Science</option>
-                        <option value="English" <?= $teacher['department']=="English"?"selected":"" ?>>English</option>
-                        <option value="IT" <?= $teacher['department']=="IT"?"selected":"" ?>>IT</option>
-                    </select>
+                    <div class="select-wrapper">
+                        <select name="department" required>
+                            <option value="Math" <?= $teacher['department']=="Math"?"selected":"" ?>>Math</option>
+                            <option value="Science" <?= $teacher['department']=="Science"?"selected":"" ?>>Science</option>
+                            <option value="English" <?= $teacher['department']=="English"?"selected":"" ?>>English</option>
+                            <option value="IT" <?= $teacher['department']=="IT"?"selected":"" ?>>IT</option>
+                        </select>
+                    </div>
 
                     <label>Specialization:</label>
                     <input type="text" name="specialization" required 
                            value="<?= htmlspecialchars($teacher['specialization']) ?>">
 
                     <label>Assigned Course:</label>
-                    <select name="assigned_course">
-                        <option value="">-- No Course Assigned --</option>
-
-                        <?php foreach ($courses as $c): ?>
-                            <option value="<?= $c['course_id']; ?>"
-                                <?php if ($currentCourse && $currentCourse['course_id'] == $c['course_id']) echo "selected"; ?>
-                                <?php if ($c['teacher_id'] != null && $c['teacher_id'] != $teacher_id) echo "disabled"; ?>>
-                                <?= htmlspecialchars($c['course_name']); ?>
-                                <?php if ($c['teacher_id'] != null && $c['teacher_id'] != $teacher_id): ?>
-                                    (Taken)
-                                <?php endif; ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="select-wrapper">
+                        <select name="assigned_course">
+                            <option value="">-- No Course Assigned --</option>
+                            <?php foreach ($courses as $c): ?>
+                                <option value="<?= $c['course_id']; ?>"
+                                    <?php if ($currentCourse && $currentCourse['course_id'] == $c['course_id']) echo "selected"; ?>
+                                    <?php if ($c['teacher_id'] != null && $c['teacher_id'] != $teacher_id) echo "disabled"; ?>>
+                                    <?= htmlspecialchars($c['course_name']); ?>
+                                    <?php if ($c['teacher_id'] != null && $c['teacher_id'] != $teacher_id): ?>
+                                        (Taken)
+                                    <?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
                     <button type="submit">Save Changes</button>
                     <button type="button" class="btn-secondary" onclick="window.location.href='admin_dashboard.php'">Back to Dashboard</button>

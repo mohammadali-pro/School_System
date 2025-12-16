@@ -7,13 +7,11 @@ require '../PHPMailer/src/Exception.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-
 // Only admin can add teachers
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../index.php");
     exit;
 }
-
 // Get form data
 $fullname = trim($_POST['fullname']);
 $email = trim($_POST['email']);
