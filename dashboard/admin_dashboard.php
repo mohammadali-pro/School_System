@@ -676,9 +676,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         function deleteTeacher(id) {
-            if (confirm("Are you sure you want to delete this teacher?")) {
+            confirmAction("Are you sure you want to delete this teacher?", function() {
                 window.location.href = "teacher_delete.php?id=" + id;
-            }
+            });
         }
 
         // Search/Filter functionality
@@ -736,9 +736,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         function deleteStudent(id) {
-            if (confirm("Are you sure you want to delete this student?")) {
-                window.location.href = "student_delete.php?id=" + id;
-            }
+            confirmAction("Are you sure you want to delete this student?", function() {
+                 window.location.href = "student_delete.php?id=" + id;
+            });
         }
 
         function filterStudents() {
@@ -787,9 +787,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         function deleteCourse(id) {
-            if (confirm("Are you sure you want to delete this course?")) {
+             confirmAction("Are you sure you want to delete this course?", function() {
                 window.location.href = "course_delete.php?id=" + id;
-            }
+            });
         }
 
         // Auto-dismiss alerts after 4 seconds
@@ -823,12 +823,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.getElementById("photoModal").style.display = "none";
         }
 
-        // Close on click outside
         window.onclick = function(event) {
-            const modal = document.getElementById("photoModal");
-            if (event.target == modal) {
-                modal.style.display = "none";
+            const photoModal = document.getElementById("photoModal");
+            const confirmModal = document.getElementById("confirmModal");
+            
+            if (event.target == photoModal) {
+                photoModal.style.display = "none";
             }
+            if (event.target == confirmModal) {
+                confirmModal.style.display = "none";
+            }
+        }
+    </script>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-modal-content">
+            <div class="confirm-modal-header">
+                <h3>Confirm Action</h3>
+                <span class="photo-modal-close" style="position:static; font-size: 24px; color: #555; height: auto; width: auto;" onclick="closeConfirmModal()">&times;</span>
+            </div>
+            <div class="confirm-modal-body">
+                <p id="confirmMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="confirm-modal-footer">
+                <button class="btn-modal-cancel" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn-modal-confirm" id="confirmBtnAction">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let onConfirmCallback = null;
+
+        function confirmAction(message, callback) {
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmModal').style.display = 'block';
+            onConfirmCallback = callback;
+        }
+
+        document.getElementById('confirmBtnAction').addEventListener('click', function() {
+            if (onConfirmCallback) {
+                onConfirmCallback();
+            }
+            closeConfirmModal();
+        });
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            onConfirmCallback = null;
         }
     </script>
 
