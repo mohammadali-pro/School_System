@@ -1,14 +1,10 @@
 <?php
-session_start();
 require '../config/db.php';
 
 // Only admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.php");
-    exit;
-}
+requireRole('admin');
 
-$teacher_id = $_GET['id'] ?? 0;
+$teacher_id = intval($_GET['id'] ?? 0);
 
 // Fetch teacher info from Users
 $stmt = $pdo->prepare("
@@ -23,7 +19,7 @@ $teacher = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Redirect if teacher not found
 if (!$teacher) {
-    die("Teacher not found.");
+    redirectWithError('admin_dashboard.php', 'Teacher not found');
 }
 
 // Fetch list of courses
@@ -38,10 +34,19 @@ $currentCourse = $stmt2->fetch(PDO::FETCH_ASSOC);
 
 // Handle form submit
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $department = trim($_POST['department']);
-    $specialization = trim($_POST['specialization']);
-    $assignedCourse = $_POST['assigned_course'];
+    
+    // Validate CSRF token
+    if (!validateCSRFFromPost()) {
+        redirectWithError('admin_dashboard.php', 'Invalid security token');
+    }
+    
+    $department = trim($_POST['department'] ?? '');
+    $specialization = trim($_POST['specialization'] ?? '');
+    $assignedCourse = intval($_POST['assigned_course'] ?? 0);
+    
+    if (empty($department) || empty($specialization)) {
+        redirectWithError('admin_dashboard.php', 'All fields are required');
+    }
 
     // Update teacher department + specialization
     $stmt = $pdo->prepare("
@@ -60,8 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$teacher_id, $assignedCourse]);
     }
 
-    header("Location: admin_dashboard.php?success=teacher_updated");
-    exit;
+    redirectWithSuccess('admin_dashboard.php', 'Teacher updated successfully');
 }
 ?>
 
@@ -96,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <form method="POST">
+                    <?php echo csrfTokenField(); ?>
                     <label>Department:</label>
                     <div class="select-wrapper">
                         <select name="department" required>

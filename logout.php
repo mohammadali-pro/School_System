@@ -1,6 +1,9 @@
 <?php
-session_start();
-session_destroy();
+require 'config/security.php';
+
+// Properly destroy session
+destroySession();
+
 header('Location: index.php');
 exit;
 ?>

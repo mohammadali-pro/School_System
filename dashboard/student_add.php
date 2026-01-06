@@ -1,5 +1,4 @@
 <?php
-session_start();
 require '../config/db.php';
 require '../PHPMailer/src/PHPMailer.php';
 require '../PHPMailer/src/SMTP.php';
@@ -9,9 +8,11 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 // Only admin can add students
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.php");
-    exit;
+requireRole('admin');
+
+// Validate CSRF token
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateCSRFFromPost()) {
+    redirectWithError('admin_dashboard.php', 'Invalid security token');
 }
 
 // Get form data
@@ -22,13 +23,28 @@ $major = trim($_POST['Major'] ?? '');
 $yearOfStudy = trim($_POST['YearOfStudy'] ?? '');
 $password = trim($_POST['password'] ?? '');
 
+// Validate required fields
+if (empty($fullname) || empty($email) || empty($phone) || empty($major) || empty($yearOfStudy) || empty($password)) {
+    redirectWithError('admin_dashboard.php', 'All fields are required');
+}
+
+// Validate email format
+if (!validateEmail($email)) {
+    redirectWithError('admin_dashboard.php', 'Invalid email format');
+}
+
+// Validate password strength
+$passwordValidation = validatePasswordStrength($password);
+if (!$passwordValidation['valid']) {
+    redirectWithError('admin_dashboard.php', implode(', ', $passwordValidation['errors']));
+}
+
 // Check if email already exists
 $stmt = $pdo->prepare("SELECT * FROM Users WHERE email = ?");
 $stmt->execute([$email]);
 
 if ($stmt->rowCount() > 0) {
-    echo "<script>alert('Error: A student with this email address already exists!'); window.location.href='admin_dashboard.php';</script>";
-    exit;
+    redirectWithError('admin_dashboard.php', 'A student with this email address already exists');
 }
 
 // Hash the password
@@ -62,15 +78,15 @@ try {
     try {
         // Server settings
         $mail->isSMTP();
-        $mail->Host = "smtp.gmail.com"; 
+        $mail->Host = EMAIL_HOST; 
         $mail->SMTPAuth = true;
-        $mail->Username = "maazm691@gmail.com"; 
-        $mail->Password = "imca ypng bhzu xzqy";    
-        $mail->SMTPSecure = "tls";
-        $mail->Port = 587;
+        $mail->Username = EMAIL_USERNAME; 
+        $mail->Password = EMAIL_PASSWORD;    
+        $mail->SMTPSecure = EMAIL_ENCRYPTION;
+        $mail->Port = EMAIL_PORT;
 
         // Recipients
-        $mail->setFrom("maazm691@gmail.com", "School System");
+        $mail->setFrom(EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME);
         $mail->addAddress($email, $fullname);
 
         // Email content
@@ -92,11 +108,10 @@ try {
     }
 
     // Redirect back with success message
-    header("Location: admin_dashboard.php?success=student_added");
-    exit;
+    redirectWithSuccess('admin_dashboard.php', 'Student added successfully');
 
 } catch (Exception $e) {
     $pdo->rollBack();
-    die("Error adding student: " . $e->getMessage());
+    redirectWithError('admin_dashboard.php', 'Error adding student: ' . $e->getMessage());
 }
 ?>

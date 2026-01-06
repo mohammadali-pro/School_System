@@ -1,14 +1,10 @@
 <?php
-session_start();
 require '../config/db.php';
 
 // Only admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.php");
-    exit;
-}
+requireRole('admin');
 
-$student_id = $_GET['id'] ?? 0;
+$student_id = intval($_GET['id'] ?? 0);
 
 // Fetch student info from Users
 $stmt = $pdo->prepare("
@@ -23,14 +19,23 @@ $student = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Redirect if student not found
 if (!$student) {
-    die("Student not found.");
+    redirectWithError('admin_dashboard.php', 'Student not found');
 }
 
 // Handle form submit
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $major = trim($_POST['major']);
-    $yearOfStudy = trim($_POST['year_of_study']);
+    
+    // Validate CSRF token
+    if (!validateCSRFFromPost()) {
+        redirectWithError('admin_dashboard.php', 'Invalid security token');
+    }
+    
+    $major = trim($_POST['major'] ?? '');
+    $yearOfStudy = trim($_POST['year_of_study'] ?? '');
+    
+    if (empty($major) || empty($yearOfStudy)) {
+        redirectWithError('admin_dashboard.php', 'All fields are required');
+    }
 
     // Update student major + year
     $stmt = $pdo->prepare("
@@ -39,8 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ");
     $stmt->execute([$major, $yearOfStudy, $student_id]);
 
-    header("Location: admin_dashboard.php?success=student_updated");
-    exit;
+    redirectWithSuccess('admin_dashboard.php', 'Student updated successfully');
 }
 ?>
 
@@ -75,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <form method="POST">
+                    <?php echo csrfTokenField(); ?>
                     <label>Major:</label>
                     <input type="text" name="major" required 
                            value="<?= htmlspecialchars($student['major']) ?>">

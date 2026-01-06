@@ -1,31 +1,41 @@
 <?php
-session_start();
 require '../config/db.php';
 
 // Only admin
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.php");
-    exit;
-}
-$course_id = $_GET['id'] ?? 0;
+requireRole('admin');
+
+$course_id = intval($_GET['id'] ?? 0);
 // Fetch course info
 $stmt = $pdo->prepare("SELECT * FROM courses WHERE course_id = ?");
 $stmt->execute([$course_id]);
 $course = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$course) {
-    die("Course not found.");
+    redirectWithError('admin_dashboard.php', 'Course not found');
 }
 
 // Handle form submit
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['course_name']);
-    $code = trim($_POST['course_code']);
-    $credits = intval($_POST['credits']);
-    $teacher_id = !empty($_POST['teacher_id']) ? $_POST['teacher_id'] : null;
+    
+    // Validate CSRF token
+    if (!validateCSRFFromPost()) {
+        redirectWithError('admin_dashboard.php', 'Invalid security token');
+    }
+    
+    $name = trim($_POST['course_name'] ?? '');
+    $code = trim($_POST['course_code'] ?? '');
+    $credits = intval($_POST['credits'] ?? 0);
+    $teacher_id = !empty($_POST['teacher_id']) ? intval($_POST['teacher_id']) : null;
 
     if (empty($name) || empty($code)) {
-        die("Course Name and Code are required.");
+        redirectWithError('admin_dashboard.php', 'Course Name and Code are required');
+    }
+    
+    // Check if course code exists for another course
+    $stmt = $pdo->prepare("SELECT course_id FROM courses WHERE course_code = ? AND course_id != ?");
+    $stmt->execute([$code, $course_id]);
+    if ($stmt->rowCount() > 0) {
+        redirectWithError('admin_dashboard.php', 'Course code already exists for another course');
     }
 
     // Update
@@ -36,8 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ");
     $stmt->execute([$name, $code, $credits, $teacher_id, $course_id]);
 
-    header("Location: admin_dashboard.php?success=course_updated");
-    exit;
+    redirectWithSuccess('admin_dashboard.php', 'Course updated successfully');
 }
 
 // Fetch all teachers for dropdown
@@ -72,6 +81,7 @@ $teachersList = $stmtT->fetchAll(PDO::FETCH_ASSOC);
                 <h2>Course Information</h2>
                 
                 <form method="POST">
+                    <?php echo csrfTokenField(); ?>
                     <label>Course Name:</label>
                     <input type="text" name="course_name" required value="<?= htmlspecialchars($course['course_name']); ?>">
 

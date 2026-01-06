@@ -1,19 +1,19 @@
 <?php
-session_start();
 require '../config/db.php';
 
 // Only admin allowed
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.php");
-    exit;
+requireRole('admin');
+
+// Validate CSRF token
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateCSRFFromPost()) {
+    redirectWithError('admin_dashboard.php', 'Invalid security token');
 }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $student_id = $_POST['student_id'] ?? '';
-    $course_id = $_POST['course_id'] ?? '';
+    $student_id = intval($_POST['student_id'] ?? 0);
+    $course_id = intval($_POST['course_id'] ?? 0);
 
     if (empty($student_id) || empty($course_id)) {
-        header("Location: admin_dashboard.php?error=missing_fields");
-        exit;
+        redirectWithError('admin_dashboard.php', 'Student and course are required');
     }
 
     try {
@@ -22,23 +22,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([$student_id, $course_id]);
 
         if ($stmt->rowCount() > 0) {
-            header("Location: admin_dashboard.php?error=already_enrolled");
-            exit;
+            redirectWithError('admin_dashboard.php', 'Student is already enrolled in this course');
         }
 
         // Insert Enrollment
         $stmt = $pdo->prepare("INSERT INTO enrollment (student_id, course_id, enrollment_date) VALUES (?, ?, NOW())");
         $stmt->execute([$student_id, $course_id]);
 
-        header("Location: admin_dashboard.php?success=enrollment_created");
-        exit;
+        redirectWithSuccess('admin_dashboard.php', 'Student enrolled successfully');
 
     } catch (Exception $e) {
-         // In a real app, log error. For now, show generic error or debug.
-        header("Location: admin_dashboard.php?error=db_error");
-        exit;
+        redirectWithError('admin_dashboard.php', 'Error enrolling student: ' . $e->getMessage());
     }
 } else {
-    header("Location: admin_dashboard.php");
-    exit;
+    redirectWithError('admin_dashboard.php', 'Invalid request');
 }

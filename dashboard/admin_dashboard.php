@@ -158,13 +158,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form method="POST" action="update_profile.php" enctype="multipart/form-data">
                     <label>Full Name:</label>
-                    <input type="text" name="fullname" required>
+                    <input type="text" name="fullname" placeholder="Leave empty to keep current">
 
                     <label>Email:</label>
-                    <input type="email" name="email" required>
+                    <input type="email" name="email" placeholder="Leave empty to keep current">
 
                     <label>Phone:</label>
-                    <input type="text" name="phone" required pattern="\d{8,15}" title="Enter a valid phone number">
+                    <input type="text" name="phone" pattern="\d{8,15}" title="Enter a valid phone number" placeholder="Leave empty to keep current">
 
                     <label>Profile Photo:</label>
                     <input type="file" name="photo" accept="image/*">
@@ -185,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const confirm = document.querySelector('input[name="confirm_password"]').value;
 
                 if (pass !== confirm) {
-                    alert("Passwords do not match!");
+                    showNotification('Passwords do not match!', 'error');
                     e.preventDefault();
                 }
             });
@@ -872,6 +872,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function closeConfirmModal() {
             document.getElementById('confirmModal').style.display = 'none';
             onConfirmCallback = null;
+        }
+    </script>
+
+    <!-- Notification Container -->
+    <div id="notificationContainer"></div>
+
+    <script>
+        // Custom Notification System
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notificationContainer');
+            const notification = document.createElement('div');
+            notification.className = `custom-notification ${type}`;
+            
+            const icons = {
+                success: '✓',
+                error: '✕',
+                warning: '⚠',
+                info: 'ℹ'
+            };
+            
+            notification.innerHTML = `
+                <span class="notification-icon">${icons[type] || icons.info}</span>
+                <span class="notification-message">${message}</span>
+                <span class="notification-close" onclick="this.parentElement.remove()">×</span>
+            `;
+            
+            container.appendChild(notification);
+            
+            // Auto remove after 4 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 4000);
+            
+            // Click to dismiss
+            notification.addEventListener('click', function(e) {
+                if (!e.target.classList.contains('notification-close')) {
+                    this.remove();
+                }
+            });
         }
     </script>
 

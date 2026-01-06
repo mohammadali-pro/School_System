@@ -1,5 +1,4 @@
 <?php
-session_start();
 require '../config/db.php';
 require '../PHPMailer/src/PHPMailer.php';
 require '../PHPMailer/src/SMTP.php';
@@ -7,47 +6,71 @@ require '../PHPMailer/src/Exception.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
+
 // Only admin can add teachers
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header("Location: ../index.php");
-    exit;
+requireRole('admin');
+
+// Validate CSRF token
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateCSRFFromPost()) {
+    redirectWithError('admin_dashboard.php', 'Invalid security token');
 }
 // Get form data
-$fullname = trim($_POST['fullname']);
-$email = trim($_POST['email']);
-$phone = trim($_POST['phone']);
-$department = trim($_POST['department']);
-$specialization = trim($_POST['specialization']);
-$password = trim($_POST['password']);
+$fullname = trim($_POST['fullname'] ?? '');
+$email = trim($_POST['email'] ?? '');
+$phone = trim($_POST['phone'] ?? '');
+$department = trim($_POST['department'] ?? '');
+$specialization = trim($_POST['specialization'] ?? '');
+$password = trim($_POST['password'] ?? '');
+
+// Validate required fields
+if (empty($fullname) || empty($email) || empty($phone) || empty($department) || empty($specialization) || empty($password)) {
+    redirectWithError('admin_dashboard.php', 'All fields are required');
+}
+
+// Validate email format
+if (!validateEmail($email)) {
+    redirectWithError('admin_dashboard.php', 'Invalid email format');
+}
+
+// Validate password strength
+$passwordValidation = validatePasswordStrength($password);
+if (!$passwordValidation['valid']) {
+    redirectWithError('admin_dashboard.php', implode(', ', $passwordValidation['errors']));
+}
 
 // Check if email already exists
 $stmt = $pdo->prepare("SELECT * FROM Users WHERE email = ?");
 $stmt->execute([$email]);
 
 if ($stmt->rowCount() > 0) {
-    die("<script>alert('Email already exists!'); history.back();</script>");
+    redirectWithError('admin_dashboard.php', 'Email already exists');
 }
 
 // Hash the password
 $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-// Insert into Users table
-$stmt = $pdo->prepare("
-    INSERT INTO Users (full_name, email, phone, role, password) 
-    VALUES (?, ?, ?, 'teacher', ?)
-");
-
-$stmt->execute([$fullname, $email, $phone, $hashedPassword]);
-
-$teacher_id = $pdo->lastInsertId();
-
-// Insert into teachers table
-$stmt2 = $pdo->prepare("
-    INSERT INTO teachers (user_id, department, specialization)
-    VALUES (?, ?, ?)
-");
-
-$stmt2->execute([$teacher_id, $department, $specialization]);
+try {
+    $pdo->beginTransaction();
+    
+    // Insert into Users table
+    $stmt = $pdo->prepare("
+        INSERT INTO Users (full_name, email, phone, role, password) 
+        VALUES (?, ?, ?, 'teacher', ?)
+    ");
+    
+    $stmt->execute([$fullname, $email, $phone, $hashedPassword]);
+    
+    $teacher_id = $pdo->lastInsertId();
+    
+    // Insert into teachers table
+    $stmt2 = $pdo->prepare("
+        INSERT INTO teachers (user_id, department, specialization)
+        VALUES (?, ?, ?)
+    ");
+    
+    $stmt2->execute([$teacher_id, $department, $specialization]);
+    
+    $pdo->commit();
 
 // SEND EMAIL WITH LOGIN DETAILS
 $mail = new PHPMailer(true);
@@ -55,15 +78,15 @@ $mail = new PHPMailer(true);
 try {
     // Server settings
     $mail->isSMTP();
-    $mail->Host = "smtp.gmail.com"; 
+    $mail->Host = EMAIL_HOST; 
     $mail->SMTPAuth = true;
-    $mail->Username = "maazm691@gmail.com"; // <-- replace
-    $mail->Password = "imca ypng bhzu xzqy";     // <-- replace (Google App Password)
-    $mail->SMTPSecure = "tls";
-    $mail->Port = 587;
+    $mail->Username = EMAIL_USERNAME;
+    $mail->Password = EMAIL_PASSWORD;
+    $mail->SMTPSecure = EMAIL_ENCRYPTION;
+    $mail->Port = EMAIL_PORT;
 
     // Recipients
-$mail->setFrom("maazm691@gmail.com", "School System");
+    $mail->setFrom(EMAIL_FROM_ADDRESS, EMAIL_FROM_NAME);
 
     $mail->addAddress($email, $fullname);
 
@@ -87,8 +110,14 @@ $mail->setFrom("maazm691@gmail.com", "School System");
 }
 
 // Redirect back with success message
-header("Location: admin_dashboard.php?success=teacher_added");
-exit;
+redirectWithSuccess('admin_dashboard.php', 'Teacher added successfully');
+
+} catch (Exception $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+    redirectWithError('admin_dashboard.php', 'Error adding teacher: ' . $e->getMessage());
+}
 
 ?>
 

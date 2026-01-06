@@ -1,39 +1,91 @@
 <?php
-session_start();
 require '../config/db.php';
+require '../config/FileUploadHandler.php';
 
 // Make sure user is logged in
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../index.php");
-    exit;
+requireAuth();
+
+// Validate CSRF token
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validateCSRFFromPost()) {
+    redirectWithError($_SESSION['role'] . '_dashboard.php', 'Invalid security token');
 }
+
 $user_id = $_SESSION['user_id'];
 
-// Get form data
-$fullname = trim($_POST['fullname']);
-$email = trim($_POST['email']);
-$phone = trim($_POST['phone']);
+// Get current user data first
+$stmt = $pdo->prepare("SELECT full_name, email, phone FROM Users WHERE user_id = ?");
+$stmt->execute([$user_id]);
+$currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-$new_password = trim($_POST['password']);
-$confirm_password = trim($_POST['confirm_password']);
+// Get form data
+$fullname = trim($_POST['fullname'] ?? '');
+$email = trim($_POST['email'] ?? '');
+$phone = trim($_POST['phone'] ?? '');
+$new_password = trim($_POST['password'] ?? '');
+$confirm_password = trim($_POST['confirm_password'] ?? '');
+
+// Use current values if fields are empty
+$fullname = !empty($fullname) ? $fullname : $currentUser['full_name'];
+$email = !empty($email) ? $email : $currentUser['email'];
+$phone = !empty($phone) ? $phone : $currentUser['phone'];
+
+// Validate email format if email is being changed
+if ($email !== $currentUser['email'] && !validateEmail($email)) {
+    $role = $_SESSION['role'] ?? 'admin';
+    redirectWithError($role . '_dashboard.php', 'Invalid email format');
+}
 
 $photo = $_FILES['photo'] ?? null;
 
-// ------------------ VALIDATE PASSWORD ------------------
+// Validate password if provided
 if ($new_password !== "" && $new_password !== $confirm_password) {
-    die("<script>alert('Passwords do not match!'); history.back();</script>");
+    $role = $_SESSION['role'] ?? 'admin';
+    redirectWithError($role . '_dashboard.php', 'Passwords do not match');
 }
 
-// ------------------ HANDLE PHOTO UPLOAD ------------------
+// Validate password strength if new password provided
+if ($new_password !== "") {
+    $passwordValidation = validatePasswordStrength($new_password);
+    if (!$passwordValidation['valid']) {
+        $role = $_SESSION['role'] ?? 'admin';
+        redirectWithError($role . '_dashboard.php', implode(', ', $passwordValidation['errors']));
+    }
+}
+
+// Check email uniqueness only if email is being changed
+if ($email !== $currentUser['email']) {
+    $stmt = $pdo->prepare("SELECT user_id FROM Users WHERE email = ? AND user_id != ?");
+    $stmt->execute([$email, $user_id]);
+    if ($stmt->rowCount() > 0) {
+        $role = $_SESSION['role'] ?? 'admin';
+        redirectWithError($role . '_dashboard.php', 'Email already in use by another user');
+    }
+}
+
+// Handle photo upload with secure validation
 $photoName = null;
+$photo = $_FILES['photo'] ?? null;
 
-if ($photo && $photo['error'] === 0) {
-
-    $ext = pathinfo($photo['name'], PATHINFO_EXTENSION);
-    $photoName = "profile_" . $user_id . "_" . time() . "." . $ext;
-
-    // Save to uploads folder
-    move_uploaded_file($photo['tmp_name'], "../uploads/$photoName");
+if ($photo && $photo['error'] !== UPLOAD_ERR_NO_FILE) {
+    $uploader = new FileUploadHandler();
+    $result = $uploader->upload($photo, 'profile_' . $user_id);
+    
+    if ($result['success']) {
+        // Get old photo to delete
+        $stmt = $pdo->prepare("SELECT photo_path FROM Users WHERE user_id = ?");
+        $stmt->execute([$user_id]);
+        $oldPhoto = $stmt->fetchColumn();
+        
+        // Delete old photo if exists
+        if ($oldPhoto) {
+            $uploader->delete($oldPhoto);
+        }
+        
+        $photoName = $result['filename'];
+    } else {
+        $role = $_SESSION['role'] ?? 'admin';
+        redirectWithError($role . '_dashboard.php', implode(', ', $result['errors']));
+    }
 }
 
 // ------------------ BUILD UPDATE QUERY ------------------
@@ -46,7 +98,7 @@ if ($photoName !== null) {
     $params[] = $photoName;
 }
 
-// If password provided → hash and update
+// If password provided, validate and hash
 if (!empty($new_password)) {
     $hashed = password_hash($new_password, PASSWORD_DEFAULT);
     $updateFields .= ", password = ?";
@@ -61,6 +113,7 @@ $sql = "UPDATE Users SET $updateFields WHERE user_id = ?";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 
+
 // Update session name so dashboard updates instantly
 $_SESSION['full_name'] = $fullname;
 
@@ -68,7 +121,6 @@ $_SESSION['full_name'] = $fullname;
 $role = $_SESSION['role'] ?? 'admin';
 $redirectPage = $role . '_dashboard.php';
 
-header("Location: $redirectPage?success=profile_updated");
-exit;
+redirectWithSuccess($redirectPage, 'Profile updated successfully');
 
 ?>

@@ -1,38 +1,64 @@
 <?php
-session_start();
 require 'config/db.php';
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $email = trim($_POST['email'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-
-    // Get the user using email
-    $stmt = $pdo->prepare("SELECT * FROM Users WHERE email = ?");
-    $stmt->execute([$email]);
-    $user = $stmt->fetch();
-
-    // Verify password
-    if ($user && password_verify($password, $user['password'])) {
-
-        // Save session data
-        $_SESSION['user_id'] = $user['user_id'];
-        $_SESSION['full_name'] = $user['full_name'];
-        $_SESSION['role'] = $user['role'];
-
-        // Redirect based on role
-        if ($user['role'] === 'admin') {
-            header('Location: dashboard/admin_dashboard.php');
-        } elseif ($user['role'] === 'teacher') {
-            header('Location: dashboard/teacher_dashboard.php');
-        } else {
-            header('Location: dashboard/student_dashboard.php');
-        }
-        exit;
-
+    
+    // Validate CSRF token
+    if (!validateCSRFFromPost()) {
+        $message = "Invalid security token. Please try again.";
     } else {
-        $message = "Invalid email or password!";
+        $email = trim($_POST['email'] ?? '');
+        $password = trim($_POST['password'] ?? '');
+        
+        // Validate inputs
+        if (empty($email) || empty($password)) {
+            $message = "Email and password are required.";
+        } elseif (!validateEmail($email)) {
+            $message = "Invalid email format.";
+        } else {
+            // Check if login is allowed (rate limiting)
+            $loginCheck = isLoginAllowed($email);
+            
+            if (is_array($loginCheck) && !$loginCheck['allowed']) {
+                $message = $loginCheck['message'];
+            } else {
+                // Get the user using email
+                $stmt = $pdo->prepare("SELECT * FROM Users WHERE email = ?");
+                $stmt->execute([$email]);
+                $user = $stmt->fetch();
+                
+                // Verify password
+                if ($user && password_verify($password, $user['password'])) {
+                    
+                    // Track successful login
+                    trackLoginAttempt($email, true);
+                    
+                    // Regenerate session ID to prevent session fixation
+                    session_regenerate_id(true);
+                    
+                    // Save session data
+                    $_SESSION['user_id'] = $user['user_id'];
+                    $_SESSION['full_name'] = $user['full_name'];
+                    $_SESSION['role'] = $user['role'];
+                    
+                    // Redirect based on role
+                    if ($user['role'] === 'admin') {
+                        header('Location: dashboard/admin_dashboard.php');
+                    } elseif ($user['role'] === 'teacher') {
+                        header('Location: dashboard/teacher_dashboard.php');
+                    } else {
+                        header('Location: dashboard/student_dashboard.php');
+                    }
+                    exit;
+                    
+                } else {
+                    // Track failed login attempt
+                    trackLoginAttempt($email, false);
+                    $message = "Invalid email or password!";
+                }
+            }
+        }
     }
 }
 ?>
@@ -53,6 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="mat">
             <?php if($message) echo "<p class='message'>" . htmlspecialchars($message) . "</p>"; ?>
             <form method="POST" id="loginForm" novalidate>
+                <?php echo csrfTokenField(); ?>
                 <div class="input-wrapper">
                     <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
@@ -74,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                     </svg>
-                    <input type="password" name="password" id="password" placeholder="Password" required minlength="4">
+                    <input type="password" name="password" id="password" placeholder="Password" required minlength="8">
                     <svg class="validation-icon valid-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display: none;">
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
