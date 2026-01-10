@@ -104,16 +104,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Department:</label>
                     <div class="select-wrapper">
                         <select name="department" required>
-                            <option value="Math" <?= $teacher['department']=="Math"?"selected":"" ?>>Math</option>
-                            <option value="Science" <?= $teacher['department']=="Science"?"selected":"" ?>>Science</option>
-                            <option value="English" <?= $teacher['department']=="English"?"selected":"" ?>>English</option>
-                            <option value="IT" <?= $teacher['department']=="IT"?"selected":"" ?>>IT</option>
+                            <option value="">-- Select Department --</option>
+                            <option value="Math">Math</option>
+                            <option value="Science">Science</option>
+                            <option value="English">English</option>
+                            <option value="IT">IT</option>
                         </select>
                     </div>
 
                     <label>Specialization:</label>
-                    <input type="text" name="specialization" required 
-                           value="<?= htmlspecialchars($teacher['specialization']) ?>">
+                    <input type="text" name="specialization" required placeholder="Enter specialization">
 
                     <label>Assigned Course:</label>
                     <div class="select-wrapper">
@@ -121,7 +121,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="">-- No Course Assigned --</option>
                             <?php foreach ($courses as $c): ?>
                                 <option value="<?= $c['course_id']; ?>"
-                                    <?php if ($currentCourse && $currentCourse['course_id'] == $c['course_id']) echo "selected"; ?>
                                     <?php if ($c['teacher_id'] != null && $c['teacher_id'] != $teacher_id) echo "disabled"; ?>>
                                     <?= htmlspecialchars($c['course_name']); ?>
                                     <?php if ($c['teacher_id'] != null && $c['teacher_id'] != $teacher_id): ?>

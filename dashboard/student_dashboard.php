@@ -12,6 +12,11 @@ $user_id = $_SESSION['user_id'];
 
 // HANDLE DROP COURSE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['drop_course_id'])) {
+    // Validate CSRF token
+    if (!validateCSRFFromPost()) {
+        redirectWithError('student_dashboard.php', 'Invalid security token');
+    }
+
     $drop_id = $_POST['drop_course_id'];
     
     // Security check: Ensure this enrollment belongs to the student
@@ -25,14 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['drop_course_id'])) {
         $hasGrade = $stmtGradeCheck->fetchColumn();
 
         if ($hasGrade > 0) {
-            $error_msg = "Cannot drop course: You have already been graded.";
+            redirectWithError('student_dashboard.php', "Cannot drop course: You have already been graded.");
         } else {
             $stmtDrop = $pdo->prepare("DELETE FROM enrollment WHERE enrollment_id = ?");
             $stmtDrop->execute([$drop_id]);
-            $success_msg = "Course dropped successfully.";
+            redirectWithSuccess('student_dashboard.php', "Course dropped successfully.");
         }
     } else {
-        $error_msg = "Error: Invalid request.";
+        redirectWithError('student_dashboard.php', "Error: Invalid request.");
     }
 }
 
@@ -88,19 +93,16 @@ $myCourses = $stmtCourses->fetchAll(PDO::FETCH_ASSOC);
 
         <h2 class="welcome1">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h2>
 
-        <?php if (isset($_GET['success'])): ?>
-            <?php if ($_GET['success'] === 'profile_updated'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Profile updated successfully!
-            </div>
-            <?php endif; ?>
+        <?php 
+        $success = getSuccessMessage();
+        $error = getErrorMessage();
+        if ($success): 
+        ?>
+            <div class="alert alert-success"><?php echo $success; ?></div>
         <?php endif; ?>
 
-        <?php if (isset($success_msg)): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;"><?= $success_msg; ?></div>
-        <?php endif; ?>
-        <?php if (isset($error_msg)): ?>
-            <div class="alert alert-error" style="max-width: 600px; margin: 20px auto;"><?= $error_msg; ?></div>
+        <?php if ($error): ?>
+            <div class="alert alert-error"><?php echo $error; ?></div>
         <?php endif; ?>
 
         <!-- ================= MY COURSES ================= -->
@@ -140,6 +142,7 @@ $myCourses = $stmtCourses->fetchAll(PDO::FETCH_ASSOC);
                                 <button class="btn-drop" disabled title="Cannot drop graded course">Dropped Disabled</button>
                             <?php else: ?>
                                 <form method="POST" class="drop-course-form" data-enrollment-id="<?= $course['enrollment_id']; ?>">
+                                    <?php echo csrfTokenField(); ?>
                                     <input type="hidden" name="drop_course_id" value="<?= $course['enrollment_id']; ?>">
                                     <button type="button" class="btn-drop" onclick="confirmDrop(this)">Drop Course</button>
                                 </form>
@@ -160,24 +163,25 @@ $myCourses = $stmtCourses->fetchAll(PDO::FETCH_ASSOC);
             <div class="update-container">
                 <h2>Update Your Profile</h2>
 
-                <form method="POST" action="update_profile.php" enctype="multipart/form-data">
+                <form method="POST" action="update_profile.php" enctype="multipart/form-data" autocomplete="off">
+                    <?php echo csrfTokenField(); ?>
                     <label>Full Name:</label>
-                    <input type="text" name="fullname" value="<?= htmlspecialchars($currentUser['full_name']); ?>" placeholder="Leave empty to keep current">
+                    <input type="text" name="fullname" placeholder="Leave empty to keep current">
 
                     <label>Email:</label>
-                    <input type="email" name="email" value="<?= htmlspecialchars($currentUser['email']); ?>" placeholder="Leave empty to keep current">
+                    <input type="email" name="email" placeholder="Leave empty to keep current" autocomplete="new-user">
 
                     <label>Phone:</label>
-                    <input type="text" name="phone" pattern="\d{8,15}" title="Enter a valid phone number" value="<?= htmlspecialchars($currentUser['phone'] ?? ''); ?>" placeholder="Leave empty to keep current">
+                    <input type="text" name="phone" pattern="\d{8,15}" title="Enter a valid phone number" placeholder="Leave empty to keep current">
 
                     <label>Profile Photo:</label>
                     <input type="file" name="photo" accept="image/*">
 
                     <label>New Password (optional):</label>
-                    <input type="password" name="password" minlength="6">
+                    <input type="password" name="password" minlength="6" autocomplete="new-password">
 
                     <label>Confirm Password:</label>
-                    <input type="password" name="confirm_password" minlength="6">
+                    <input type="password" name="confirm_password" minlength="6" autocomplete="new-password">
 
                     <button type="submit">Update</button>
                 </form>

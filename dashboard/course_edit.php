@@ -24,12 +24,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $name = trim($_POST['course_name'] ?? '');
     $code = trim($_POST['course_code'] ?? '');
-    $credits = intval($_POST['credits'] ?? 0);
-    $teacher_id = !empty($_POST['teacher_id']) ? intval($_POST['teacher_id']) : null;
+    $credits_input = trim($_POST['credits'] ?? '');
+    $teacher_id_input = $_POST['teacher_id'] ?? '';
 
-    if (empty($name) || empty($code)) {
-        redirectWithError('admin_dashboard.php', 'Course Name and Code are required');
-    }
+    // If empty, keep old values
+    if (empty($name)) $name = $course['course_name'];
+    if (empty($code)) $code = $course['course_code'];
+    
+    $credits = ($credits_input === '') ? intval($course['credits']) : intval($credits_input);
+    
+    // For teacher_id, if the input is empty string, it means "-- No Teacher --" was selected.
+    // We set it to null to remove the assignment.
+    $teacher_id = ($teacher_id_input === '') ? null : intval($teacher_id_input);
     
     // Check if course code exists for another course
     $stmt = $pdo->prepare("SELECT course_id FROM courses WHERE course_code = ? AND course_id != ?");
@@ -83,21 +89,20 @@ $teachersList = $stmtT->fetchAll(PDO::FETCH_ASSOC);
                 <form method="POST">
                     <?php echo csrfTokenField(); ?>
                     <label>Course Name:</label>
-                    <input type="text" name="course_name" required value="<?= htmlspecialchars($course['course_name']); ?>">
+                    <input type="text" name="course_name" value="<?= htmlspecialchars($course['course_name']) ?>" placeholder="Enter course name">
 
                     <label>Course Code:</label>
-                    <input type="text" name="course_code" required value="<?= htmlspecialchars($course['course_code']); ?>">
+                    <input type="text" name="course_code" value="<?= htmlspecialchars($course['course_code']) ?>" placeholder="Enter course code">
 
                     <label>Credits:</label>
-                    <input type="number" name="credits" required value="<?= htmlspecialchars($course['credits']); ?>">
+                    <input type="number" name="credits" value="<?= htmlspecialchars($course['credits']) ?>" placeholder="Enter credits">
 
                     <label>Assign Teacher:</label>
                     <div class="select-wrapper">
                         <select name="teacher_id">
                             <option value="">-- No Teacher --</option>
                             <?php foreach ($teachersList as $tl): ?>
-                                <option value="<?= $tl['user_id']; ?>" 
-                                    <?= ($course['teacher_id'] == $tl['user_id']) ? 'selected' : ''; ?>>
+                                <option value="<?= $tl['user_id']; ?>" <?= ($course['teacher_id'] == $tl['user_id']) ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($tl['full_name']); ?>
                                 </option>
                             <?php endforeach; ?>

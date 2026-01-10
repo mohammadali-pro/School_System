@@ -7,20 +7,26 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header("Location: ../index.php");
     exit;
 }
-$id = $_GET['id'] ?? 0;
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    die("Method not allowed");
+}
+
+// Validate CSRF token
+if (!validateCSRFFromPost()) {
+    redirectWithError('admin_dashboard.php', 'Invalid security token');
+}
+
+$id = $_POST['id'] ?? 0;
 
 if ($id > 0) {
     try {
         $stmt = $pdo->prepare("DELETE FROM courses WHERE course_id = ?");
         $stmt->execute([$id]);
-        
-        header("Location: admin_dashboard.php?success=course_deleted"); 
-        exit;
+        redirectWithSuccess('admin_dashboard.php', 'Course deleted successfully');
     } catch (Exception $e) {
-        die("Error deleting course: " . $e->getMessage());
+        redirectWithError('admin_dashboard.php', 'Error deleting course: ' . $e->getMessage());
     }
 } else {
-    header("Location: admin_dashboard.php");
-    exit;
+    redirectWithError('admin_dashboard.php', 'Invalid course ID');
 }
 ?>

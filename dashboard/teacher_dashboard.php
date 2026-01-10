@@ -90,12 +90,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <h2 class="welcome1">Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h2>
 
-        <?php if (isset($_GET['success'])): ?>
-            <?php if ($_GET['success'] === 'profile_updated'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Profile updated successfully!
-            </div>
-            <?php endif; ?>
+        <?php 
+        $success = getSuccessMessage();
+        $error = getErrorMessage();
+        if ($success): 
+        ?>
+            <div class="alert alert-success"><?php echo $success; ?></div>
+        <?php endif; ?>
+
+        <?php if ($error): ?>
+            <div class="alert alert-error"><?php echo $error; ?></div>
         <?php endif; ?>
 
         <!-- ================= MY COURSES ================= -->
@@ -142,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="search-block" style="max-width: 600px; margin: 0 auto;">
                     <h3>Find Student Courses</h3>
                     <form method="POST" class="search-form">
+                        <?php echo csrfTokenField(); ?>
                         <label>Student Email:</label>
                         <div class="input-group">
                             <input type="email" name="search_student_email" required placeholder="student@example.com">
@@ -193,24 +198,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="update-container">
                 <h2>Update Your Profile</h2>
 
-                <form method="POST" action="update_profile.php" enctype="multipart/form-data">
+                <form method="POST" action="update_profile.php" enctype="multipart/form-data" autocomplete="off">
+                    <?php echo csrfTokenField(); ?>
                     <label>Full Name:</label>
-                    <input type="text" name="fullname" value="<?= htmlspecialchars($currentUser['full_name']); ?>" placeholder="Leave empty to keep current">
+                    <input type="text" name="fullname" placeholder="Leave empty to keep current">
 
                     <label>Email:</label>
-                    <input type="email" name="email" value="<?= htmlspecialchars($currentUser['email']); ?>" placeholder="Leave empty to keep current">
+                    <input type="email" name="email" placeholder="Leave empty to keep current" autocomplete="new-user">
 
                     <label>Phone:</label>
-                    <input type="text" name="phone" pattern="\d{8,15}" title="Enter a valid phone number" value="<?= htmlspecialchars($currentUser['phone'] ?? ''); ?>" placeholder="Leave empty to keep current">
+                    <input type="text" name="phone" pattern="\d{8,15}" title="Enter a valid phone number" placeholder="Leave empty to keep current">
 
                     <label>Profile Photo:</label>
                     <input type="file" name="photo" accept="image/*">
 
                     <label>New Password (optional):</label>
-                    <input type="password" name="password" minlength="6">
+                    <input type="password" name="password" minlength="6" autocomplete="new-password">
 
                     <label>Confirm Password:</label>
-                    <input type="password" name="confirm_password" minlength="6">
+                    <input type="password" name="confirm_password" minlength="6" autocomplete="new-password">
 
                     <button type="submit">Update</button>
                 </form>

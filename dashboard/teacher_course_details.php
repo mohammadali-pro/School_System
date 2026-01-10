@@ -27,6 +27,11 @@ if (!$course) {
 
 // HANDLE GRADE UPDATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_grade'])) {
+    // Validate CSRF token
+    if (!validateCSRFFromPost()) {
+        redirectWithError("teacher_course_details.php?course_id=$course_id", 'Invalid security token');
+    }
+
     $enrollment_id = $_POST['enrollment_id'];
     $grade_value = $_POST['grade'];
 
@@ -43,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_grade'])) {
         $stmtInsert->execute([$enrollment_id, $grade_value]);
     }
 
-    $success_msg = "Grade updated successfully!";
+    redirectWithSuccess("teacher_course_details.php?course_id=$course_id", "Grade updated successfully!");
 }
 
 // Fetch Enrolled Students
@@ -98,8 +103,16 @@ $profilePhoto = !empty($currentUser['photo_path']) ? '../uploads/' . $currentUse
             <span class="course-badge"><?= htmlspecialchars($course['course_code']); ?></span>
         </div>
 
-        <?php if (isset($success_msg)): ?>
-            <div class="alert alert-success"><?= $success_msg; ?></div>
+        <?php 
+        $success = getSuccessMessage();
+        $error = getErrorMessage();
+        if ($success): 
+        ?>
+            <div class="alert alert-success"><?php echo $success; ?></div>
+        <?php endif; ?>
+
+        <?php if ($error): ?>
+            <div class="alert alert-error"><?php echo $error; ?></div>
         <?php endif; ?>
 
         <div class="section" style="display: block;">
@@ -124,8 +137,9 @@ $profilePhoto = !empty($currentUser['photo_path']) ? '../uploads/' . $currentUse
                             </div>
 
                             <form method="POST" class="grade-form">
+                                <?php echo csrfTokenField(); ?>
                                 <input type="hidden" name="enrollment_id" value="<?= $student['enrollment_id']; ?>">
-                                <input type="number" name="grade" step="0.01" min="0" max="100" class="grade-input" placeholder="--" value="<?= htmlspecialchars($student['grade'] ?? ''); ?>" required>
+                                <input type="number" name="grade" step="0.01" min="0" max="100" class="grade-input" placeholder="--" required>
                                 <button type="submit" name="update_grade" class="btn-update">Save</button>
                             </form>
                         </div>

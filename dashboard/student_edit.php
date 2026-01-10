@@ -81,14 +81,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <form method="POST">
                     <?php echo csrfTokenField(); ?>
                     <label>Major:</label>
-                    <input type="text" name="major" required 
-                           value="<?= htmlspecialchars($student['major']) ?>">
+                    <input type="text" name="major" required placeholder="Enter major">
 
                     <label>Year of Study:</label>
                     <div class="select-wrapper">
                         <select name="year_of_study" required>
-                            <option value="2025/2026" <?= $student['year_of_study']=="2025/2026"?"selected":"" ?>>2025/2026</option>
-                            <option value="2026/2027" <?= $student['year_of_study']=="2026/2027"?"selected":"" ?>>2026/2027</option>
+                            <option value="">-- Select Year --</option>
+                            <option value="2025/2026">2025/2026</option>
+                            <option value="2026/2027">2026/2027</option>
                         </select>
                     </div>
 

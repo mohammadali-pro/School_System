@@ -93,62 +93,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <h2 class="welcome1">Welcome, <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin'); ?>!</h2>
 
-        <?php if (isset($_GET['success'])): ?>
-            <?php if ($_GET['success'] === 'teacher_added'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Teacher added successfully! Email with login credentials has been sent.
-            </div>
-            <?php elseif ($_GET['success'] === 'teacher_updated'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Teacher updated successfully!
-            </div>
-            <?php elseif ($_GET['success'] === 'profile_updated'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Profile updated successfully!
-            </div>
-            <?php elseif ($_GET['success'] === 'student_added'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Student added successfully! Email with login credentials has been sent.
-            </div>
-            <?php elseif ($_GET['success'] === 'student_updated'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Student updated successfully!
-            </div>
-            <?php elseif ($_GET['success'] === 'enrollment_created'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Student successfully enrolled in the course!
-            </div>
-            <?php elseif ($_GET['success'] === 'course_added'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Course added successfully!
-            </div>
-            <?php elseif ($_GET['success'] === 'course_updated'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Course updated successfully!
-            </div>
-            <?php elseif ($_GET['success'] === 'course_deleted'): ?>
-            <div class="alert alert-success" style="max-width: 600px; margin: 20px auto;">
-                Course deleted successfully!
-            </div>
-            <?php elseif (isset($_GET['error'])): ?>
-                <?php if ($_GET['error'] === 'course_exists'): ?>
-                <div class="alert alert-error" style="max-width: 600px; margin: 20px auto; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px;">
-                    Error: A course with this Course Code already exists.
-                </div>
-                <?php elseif ($_GET['error'] === 'already_enrolled'): ?>
-                <div class="alert alert-error" style="max-width: 600px; margin: 20px auto; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px;">
-                    Error: Student is already enrolled in this course.
-                </div>
-                <?php elseif ($_GET['error'] === 'email_exists'): ?>
-                <div class="alert alert-error" style="max-width: 600px; margin: 20px auto; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px;">
-                    Error: A student with this email address already exists.
-                </div>
-                <?php elseif ($_GET['error'] === 'missing_fields'): ?>
-                <div class="alert alert-error" style="max-width: 600px; margin: 20px auto; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px;">
-                    Error: Please select both a student and a course.
-                </div>
-                <?php endif; ?>
-            <?php endif; ?>
+        <?php 
+        $success = getSuccessMessage();
+        $error = getErrorMessage();
+        if ($success): 
+        ?>
+            <div class="alert alert-success"><?php echo $success; ?></div>
+        <?php endif; ?>
+
+        <?php if ($error): ?>
+            <div class="alert alert-error"><?php echo $error; ?></div>
         <?php endif; ?>
 
         <!-- ================= UPDATE PROFILE ================= -->
@@ -156,12 +110,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="update-container">
                 <h2>Update Your Profile</h2>
 
-                <form method="POST" action="update_profile.php" enctype="multipart/form-data">
+                <form method="POST" action="update_profile.php" enctype="multipart/form-data" autocomplete="off">
+                    <?php echo csrfTokenField(); ?>
                     <label>Full Name:</label>
                     <input type="text" name="fullname" placeholder="Leave empty to keep current">
 
                     <label>Email:</label>
-                    <input type="email" name="email" placeholder="Leave empty to keep current">
+                    <input type="email" name="email" placeholder="Leave empty to keep current" autocomplete="new-user">
 
                     <label>Phone:</label>
                     <input type="text" name="phone" pattern="\d{8,15}" title="Enter a valid phone number" placeholder="Leave empty to keep current">
@@ -170,10 +125,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="file" name="photo" accept="image/*">
 
                     <label>New Password (optional):</label>
-                    <input type="password" name="password" minlength="6">
+                    <input type="password" name="password" minlength="6" autocomplete="new-password">
 
                     <label>Confirm Password:</label>
-                    <input type="password" name="confirm_password" minlength="6">
+                    <input type="password" name="confirm_password" minlength="6" autocomplete="new-password">
 
                     <button type="submit">Update</button>
                 </form>
@@ -206,24 +161,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div id="addTeacherSection" class="update-container" style="display:none;">
                 <h3>Add New Teacher</h3>
 
-                <form method="POST" action="teacher_add.php">
+                <form method="POST" action="teacher_add.php" autocomplete="off">
+                    <?php echo csrfTokenField(); ?>
                     <label>Full Name:</label>
                     <input type="text" name="fullname" required>
 
                     <label>Email:</label>
-                    <input type="email" name="email" required>
+                    <input type="email" name="email" required autocomplete="new-user">
 
                     <label>Phone:</label>
                     <input type="text" name="phone" pattern="\d{8,15}" required>
 
                     <label>Department:</label>
-                    <input type="text" name="department" required>
+                    <div class="select-wrapper">
+                        <select name="department" required>
+                            <option value="">-- Select Department --</option>
+                            <option value="Math">Math</option>
+                            <option value="Science">Science</option>
+                            <option value="English">English</option>
+                            <option value="IT">IT</option>
+                        </select>
+                    </div>
 
                     <label>Specialization:</label>
                     <input type="text" name="specialization" required>
 
                     <label>Password:</label>
-                    <input type="password" name="password" minlength="6" required>
+                    <input type="password" name="password" minlength="6" required autocomplete="new-password">
 
                     <button type="submit">Add Teacher</button>
                 </form>
@@ -316,12 +280,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Add student form-->
                  <div id="addStudentSection" class ="update-container"style="display:none;">
                     <h3>Add New Student</h3>
-                    <form method="POST" action="student_add.php">
+                    <form method="POST" action="student_add.php" autocomplete="off">
+                        <?php echo csrfTokenField(); ?>
                     <label>Full Name:</label>
                     <input type="text" name="fullname" required>
 
                     <label>Email:</label>
-                    <input type="email" name="email" required>
+                    <input type="email" name="email" required autocomplete="new-user">
 
                     <label>Phone:</label>
                     <input type="text" name="phone" pattern="\d{8,15}" required>
@@ -340,7 +305,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
                     <label>Password:</label>
-                    <input type="password" name="password" minlength="6" required>
+                    <input type="password" name="password" minlength="6" required autocomplete="new-password">
                     <button type="submit">Add Student</button>
                 </form>
             </div>
@@ -438,6 +403,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ?>
 
                 <form method="POST" action="enroll_student.php">
+                    <?php echo csrfTokenField(); ?>
                     <label>Select Student:</label>
                     <div class="select-wrapper">
                         <select name="student_id" required>
@@ -480,6 +446,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div id="addCourseSection" class="update-container" style="display:none;">
                 <h3>Add New Course</h3>
                 <form method="POST" action="course_add.php">
+                    <?php echo csrfTokenField(); ?>
                     <label>Course Name:</label>
                     <input type="text" name="course_name" required>
 
@@ -565,6 +532,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="search-block">
                     <h3>Search Teacher</h3>
                     <form method="POST" class="search-form">
+                        <?php echo csrfTokenField(); ?>
                         <label>Teacher Email:</label>
                         <div class="input-group">
                             <input type="email" name="search_teacher_email" required placeholder="teacher@example.com">
@@ -595,6 +563,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="search-block">
                     <h3>Search Student</h3>
                     <form method="POST" class="search-form">
+                        <?php echo csrfTokenField(); ?>
                         <label>Student Email:</label>
                         <div class="input-group">
                             <input type="email" name="search_student_email" required placeholder="student@example.com">
@@ -677,7 +646,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         function deleteTeacher(id) {
             confirmAction("Are you sure you want to delete this teacher?", function() {
-                window.location.href = "teacher_delete.php?id=" + id;
+                submitSecureDelete("teacher_delete.php", id);
             });
         }
 
@@ -737,7 +706,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         function deleteStudent(id) {
             confirmAction("Are you sure you want to delete this student?", function() {
-                 window.location.href = "student_delete.php?id=" + id;
+                 submitSecureDelete("student_delete.php", id);
             });
         }
 
@@ -788,8 +757,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         function deleteCourse(id) {
              confirmAction("Are you sure you want to delete this course?", function() {
-                window.location.href = "course_delete.php?id=" + id;
+                submitSecureDelete("course_delete.php", id);
             });
+        }
+
+        function submitSecureDelete(url, id) {
+            const form = document.getElementById('secureDeleteForm');
+            form.action = url;
+            document.getElementById('deleteIdInput').value = id;
+            form.submit();
         }
 
         // Auto-dismiss alerts after 4 seconds
@@ -915,6 +891,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         }
     </script>
+
+    <!-- Secure Deletion Form (Hidden) -->
+    <form id="secureDeleteForm" method="POST" style="display:none;">
+        <?php echo csrfTokenField(); ?>
+        <input type="hidden" name="id" id="deleteIdInput">
+    </form>
 
 </body>
 </html>

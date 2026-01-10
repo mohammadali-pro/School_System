@@ -64,7 +64,6 @@ if ($email !== $currentUser['email']) {
 
 // Handle photo upload with secure validation
 $photoName = null;
-$photo = $_FILES['photo'] ?? null;
 
 if ($photo && $photo['error'] !== UPLOAD_ERR_NO_FILE) {
     $uploader = new FileUploadHandler();
