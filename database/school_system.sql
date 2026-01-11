@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 11, 2026 at 01:37 AM
+-- Generation Time: Jan 12, 2026 at 12:42 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -99,14 +99,6 @@ CREATE TABLE `users` (
   `photo_path` varchar(255) DEFAULT NULL,
   `phone` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`user_id`, `full_name`, `email`, `password`, `role`, `photo_path`, `phone`) VALUES
-(8, 'Mohammad Ali Maaz', 'maazm691@gmail.com', '$2y$10$thmWc1RADy65S7jOz4/PeOOP1gVUVNyWuNkdhkGPyJsL.3flUjsnS', 'admin', 'profile_8_1768085441_3eedabc65a6e71bb.jpg', '81698385'),
-(9, 'Admin', 'admin@gmail.com', '$2y$10$S1rjFh1awa799a9h715TMeuaMPg0Wopfxl4If81EqR5XgjqKUQL0W', 'admin', NULL, NULL);
 
 --
 -- Indexes for dumped tables

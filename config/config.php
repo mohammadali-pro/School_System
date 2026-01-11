@@ -1,11 +1,4 @@
 <?php
-/**
- * Secure Configuration File
- * 
- * IMPORTANT: This file contains sensitive credentials.
- * Ensure this file is not accessible via web browser.
- * Add to .htaccess: <Files "config.php"> Deny from all </Files>
- */
 
 // Database Configuration
 define('DB_HOST', 'localhost');
@@ -14,7 +7,6 @@ define('DB_USER', 'root');
 define('DB_PASS', '');
 
 // Email Configuration
-// TODO: Replace these with your actual email credentials
 define('EMAIL_HOST', 'smtp.gmail.com');
 define('EMAIL_PORT', 587);
 define('EMAIL_USERNAME', 'maazm691@gmail.com');
@@ -25,13 +17,13 @@ define('EMAIL_ENCRYPTION', 'tls');
 
 // Security Settings
 define('CSRF_TOKEN_NAME', 'csrf_token');
-define('SESSION_LIFETIME', 3600); // 1 hour in seconds
+define('SESSION_LIFETIME', 3600);
 define('MAX_LOGIN_ATTEMPTS', 5);
-define('LOGIN_LOCKOUT_TIME', 900); // 15 minutes in seconds
+define('LOGIN_LOCKOUT_TIME', 900);
 
 // File Upload Settings
 define('UPLOAD_DIR', __DIR__ . '/../uploads/');
-define('MAX_FILE_SIZE', 5242880); // 5MB in bytes
+define('MAX_FILE_SIZE', 5242880);
 define('ALLOWED_IMAGE_TYPES', ['image/jpeg', 'image/png', 'image/gif']);
 define('ALLOWED_IMAGE_EXTENSIONS', ['jpg', 'jpeg', 'png', 'gif']);
 
@@ -46,7 +38,7 @@ define('PASSWORD_REQUIRE_SPECIAL', false);
 define('APP_NAME', 'School Management System');
 define('APP_URL', 'http://localhost/School_System');
 
-// Error Reporting (set to false in production)
+// Error Reporting
 define('DISPLAY_ERRORS', true);
 
 if (DISPLAY_ERRORS) {
