@@ -4,7 +4,7 @@ require 'config/db.php';
 // Create admin account
 $fullName = "Admin";
 $email = "admin@gmail.com";
-$plainPassword = "1234";
+$plainPassword = "Mm123456";
 $hashedPassword = password_hash($plainPassword, PASSWORD_DEFAULT);
 
 try {
