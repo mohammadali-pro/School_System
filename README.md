@@ -71,7 +71,7 @@ After the database is created and imported:
 
 #### Default Admin Credentials
 - **Email:** `admin@gmail.com`
-- **Password:** `1234`
+- **Password:** `Mm123456`
 - **Role:** Admin
 
 ---
